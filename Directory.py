@@ -1,27 +1,32 @@
 from os.path import exists
 from csv import DictReader, DictWriter
 
+
 class LenNumberError(Exception):
     def __init__(self, txt):
         self.txt = txt
 
+
 class NameError(Exception):
     def __init__(self, txt):
         self.txt = txt
-def get_info():
-    is_valid_first_name = False
-    while not is_valid_first_name:
+
+
+def get_name_input(prompt):
+    while True:
         try:
-            first_name = input("Введите имя: ")
-            if len(first_name) < 2:
+            name = input(prompt)
+            if len(name) < 2:
                 raise NameError("Не валидное имя")
             else:
-                is_valid_first_name = True
+                return name
         except NameError as err:
             print(err)
-            continue
 
-    last_name = "Иванов"
+
+def get_info():
+    first_name = get_name_input("Введите имя: ")
+    last_name = get_name_input("Введите фамилию: ")
 
     is_valid_phone = False
     while not is_valid_phone:
@@ -33,10 +38,8 @@ def get_info():
                 is_valid_phone = True
         except ValueError:
             print("Не валидный номер!!!")
-            continue
         except LenNumberError as err:
             print(err)
-            continue
 
     return [first_name, last_name, phone_number]
 
@@ -49,6 +52,10 @@ def create_file(file_name):
 
 
 def read_file(file_name):
+    if not exists(file_name):
+        print(f"Файл '{file_name}' не существует. Создаем пустой файл.")
+        create_file(file_name)
+
     with open(file_name, "r", encoding='utf-8') as data:
         f_reader = DictReader(data)
         return list(f_reader)
@@ -58,7 +65,7 @@ def write_file(file_name, lst):
     res = read_file(file_name)
     for el in res:
         if el["Телефон"] == str(lst[2]):
-            print("Такой телофон уже есть")
+            print("Такой телефон уже есть")
             return
 
     obj = {"Имя": lst[0], "Фамилия": lst[1], "Телефон": lst[2]}
@@ -67,6 +74,17 @@ def write_file(file_name, lst):
         f_writer = DictWriter(data, fieldnames=['Имя', 'Фамилия', 'Телефон'])
         f_writer.writeheader()
         f_writer.writerows(res)
+
+
+def copy_row(src_file, dest_file, row_number):
+    src_data = read_file(src_file)
+    if row_number < 1 or row_number > len(src_data):
+        print("Неверный номер строки")
+        return
+
+    row_to_copy = src_data[row_number - 1]
+    write_file(dest_file, [row_to_copy["Имя"],
+               row_to_copy["Фамилия"], row_to_copy["Телефон"]])
 
 
 file_name = 'phone.csv'
@@ -86,6 +104,12 @@ def main():
                 print("Файл отсутствует. Создайте его")
                 continue
             print(*read_file(file_name))
+        elif command == 'c':
+            src_file = input("Введите имя исходного файла: ")
+            dest_file = input(
+                "Введите имя файла, в который нужно скопировать: ")
+            row_number = int(input("Введите номер строки для копирования: "))
+            copy_row(src_file, dest_file, row_number)
 
 
 main()
